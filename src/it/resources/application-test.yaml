@@ -1,0 +1,34 @@
+spring:
+  zipkin:
+    enabled: false
+  jpa:
+    hibernate:
+      ddl-auto: update
+  autoconfigure:
+    exclude: com.epam.digital.data.platform.starter.database.DatabaseAutoConfiguration
+    
+data-platform:
+  signature:
+    enabled: false
+  kafka:
+    bootstrap: localhost:9092
+    topic-properties:
+      num-partitions: 1
+      replication-factor: 1
+    ssl:
+      enabled: false
+audit:
+  kafka:
+    bootstrap: localhost:9092
+    topic: audit-events
+    schema-registry-url: http://localhost:8081
+    ssl:
+      enabled: false
+
+datafactory-excerpt-ceph:
+  http-endpoint: localhost:5555
+  access-key: access-key
+  secret-key: secret-key
+  bucket: bucket
+dso:
+  url: http://digital-signature-ops:8080

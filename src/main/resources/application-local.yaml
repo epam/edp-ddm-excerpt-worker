@@ -1,0 +1,56 @@
+spring:
+  zipkin:
+    enabled: false
+
+server:
+  port: 7002
+
+data-platform:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/excerpt
+    username: postgres
+    password: qwerty
+  kafka:
+    bootstrap: localhost:9092
+    ssl:
+      enabled: false
+  signature:
+    enabled: false
+
+management:
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+logging:
+  level:
+    root: "info"
+  pattern:
+    #   Logging patterns inherited from Spring Boot default logging system configuration
+    #   add tracing
+    console: '%d{${LOG_DATEFORMAT_PATTERN}} [trace:%X{traceId}/%X{spanId}/%X{x-request-id}] ${LOG_LEVEL_PATTERN} %pid --- [%15.15t] %-40.40c{1.} : %m%n${LOG_EXCEPTION_CONVERSION_WORD}'
+
+dso:
+  url: https://dig-sign-ops-data-templates-dev.apps.cicd2.mdtu-ddm.projects.epam.com
+
+datafactoryExcerptCeph:
+  http-endpoint: https://s3-openshift-storage.apps.cicd2.mdtu-ddm.projects.epam.com
+  access-key: access-key
+  secret-key: secret-key
+  bucket: bucket
+
+s3:
+  config:
+    client:
+      protocol: http
+    options:
+      pathStyleAccess: true
+
+audit:
+  kafka:
+    bootstrap: localhost:9092
+    topic: audit-events
+    schema-registry-url: http://localhost:8081
+    ssl:
+      enabled: false
