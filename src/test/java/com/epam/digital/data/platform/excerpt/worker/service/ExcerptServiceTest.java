@@ -5,6 +5,8 @@ import static com.epam.digital.data.platform.excerpt.model.ExcerptProcessingStat
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -36,7 +38,6 @@ class ExcerptServiceTest {
   private static final UUID excerptId = UUID.fromString("11111111-1111-1111-1111-111111111111");
   private static final String templateName = "excerptName";
   private static final Map<String, Object> excerptData = Map.of("field", "data");
-  private static final String OBJ_KEY = templateName + "-" + excerptId + ".pdf";
 
   ExcerptService excerptService;
 
@@ -75,7 +76,7 @@ class ExcerptServiceTest {
     // then
     assertThat(mockExcerptRecord.getStatus()).isEqualTo(COMPLETED);
     assertThat(mockExcerptRecord.getStatusDetails()).isNull();
-    assertThat(mockExcerptRecord.getExcerptKey()).isEqualTo(OBJ_KEY);
+    assertThat(UUID.fromString(mockExcerptRecord.getExcerptKey())).isNotNull();
     assertThat(mockExcerptRecord.getChecksum())
         .isEqualTo(DigestUtils.sha256Hex(Base64.getEncoder().encodeToString(bytes)));
     assertThat(mockExcerptRecord.getUpdatedAt()).isNotNull();
@@ -98,7 +99,7 @@ class ExcerptServiceTest {
 
     // then
     verify(datafactoryCephService)
-        .putContent(BUCKET, OBJ_KEY, Base64.getEncoder().encodeToString(bytes));
+        .putContent(eq(BUCKET), anyString(), eq(Base64.getEncoder().encodeToString(bytes)));
     verify(renderer).templateToHtml(any(), any());
     verify(renderer).htmlToPdf(any());
     verify(recordRepository).save(any());

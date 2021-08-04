@@ -59,7 +59,7 @@ public class ExcerptService {
   }
 
   private void save(ExcerptEventDto event, byte[] bytes) {
-    var cephKey = event.getExcerptType() + "-" + event.getRecordId() + ".pdf";
+    var cephKey = UUID.randomUUID().toString();
     var cephValue = Base64.getEncoder().encodeToString(bytes);
 
     try {
