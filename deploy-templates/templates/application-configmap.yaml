@@ -14,3 +14,6 @@ data:
     datafactory-excerpt-ceph:
       http-endpoint: {{ .Values.datafactoryExcerptCeph.httpEndpoint }}
       bucketName: {{ .Values.datafactoryExcerptCeph.bucketName }}
+
+    dso:
+      url: {{ .Values.dso.url }}

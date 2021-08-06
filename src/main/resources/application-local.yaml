@@ -27,6 +27,9 @@ logging:
     #   add tracing
     console: '%d{${LOG_DATEFORMAT_PATTERN}} [trace:%X{traceId}/%X{spanId}/%X{x-request-id}] ${LOG_LEVEL_PATTERN} %pid --- [%15.15t] %-40.40c{1.} : %m%n${LOG_EXCEPTION_CONVERSION_WORD}'
 
+dso:
+  url: https://dig-sign-ops-data-templates-dev.apps.cicd2.mdtu-ddm.projects.epam.com
+
 datafactoryExcerptCeph:
   http-endpoint: https://s3-openshift-storage.apps.cicd2.mdtu-ddm.projects.epam.com
   access-key: access-key

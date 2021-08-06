@@ -3,14 +3,17 @@ package com.epam.digital.data.platform.excerpt.worker.service;
 import static com.epam.digital.data.platform.excerpt.model.ExcerptProcessingStatus.COMPLETED;
 import static com.epam.digital.data.platform.excerpt.model.ExcerptProcessingStatus.FAILED;
 
+import com.epam.digital.data.platform.dso.api.dto.SignFileRequestDto;
+import com.epam.digital.data.platform.dso.client.DigitalSignatureFileRestClient;
 import com.epam.digital.data.platform.excerpt.dao.ExcerptRecord;
 import com.epam.digital.data.platform.excerpt.model.ExcerptEventDto;
 import com.epam.digital.data.platform.excerpt.worker.exception.ExcerptProcessingException;
 import com.epam.digital.data.platform.excerpt.worker.repository.ExcerptRecordRepository;
 import com.epam.digital.data.platform.excerpt.worker.repository.ExcerptTemplateRepository;
+import com.epam.digital.data.platform.integration.ceph.dto.CephObject;
 import com.epam.digital.data.platform.integration.ceph.service.CephService;
 import java.time.LocalDateTime;
-import java.util.Base64;
+import java.util.Map;
 import java.util.UUID;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,6 +26,7 @@ public class ExcerptService {
   private final ExcerptRecordRepository recordRepository;
   private final DocumentRenderer renderer;
   private final CephService datafactoryCephService;
+  private final DigitalSignatureFileRestClient digitalSignatureFileRestClient;
   private final String bucket;
 
   public ExcerptService(
@@ -30,11 +34,13 @@ public class ExcerptService {
       ExcerptRecordRepository recordRepository,
       DocumentRenderer renderer,
       CephService datafactoryCephService,
+      DigitalSignatureFileRestClient digitalSignatureFileRestClient,
       @Value("${datafactory-excerpt-ceph.bucket}") String bucket) {
     this.templateRepository = templateRepository;
     this.recordRepository = recordRepository;
     this.renderer = renderer;
     this.datafactoryCephService = datafactoryCephService;
+    this.digitalSignatureFileRestClient = digitalSignatureFileRestClient;
     this.bucket = bucket;
   }
 
@@ -47,7 +53,7 @@ public class ExcerptService {
       var html = renderer.templateToHtml(excerptTemplate, event.getExcerptInputData());
       var pdf = renderer.htmlToPdf(html);
 
-      save(event, pdf);
+      savePdf(event, pdf);
     } catch (ExcerptProcessingException e) {
       var excerptRecord = getRecordById(event.getRecordId());
       excerptRecord.setStatus(e.getStatus());
@@ -58,20 +64,46 @@ public class ExcerptService {
     }
   }
 
-  private void save(ExcerptEventDto event, byte[] bytes) {
+  private void savePdf(ExcerptEventDto event, byte[] bytes) {
     var cephKey = UUID.randomUUID().toString();
-    var cephValue = Base64.getEncoder().encodeToString(bytes);
-
+    String checksum;
     try {
-      datafactoryCephService.putContent(bucket, cephKey, cephValue);
+      datafactoryCephService.putObject(bucket, cephKey, new CephObject(bytes, Map.of()));
+      if (event.isRequiresSystemSignature()) {
+        var signExcerptResponse =
+                digitalSignatureFileRestClient.sign(new SignFileRequestDto(cephKey));
+        if (signExcerptResponse.isSigned()) {
+          checksum = getSignedChecksum(cephKey);
+        } else {
+          throw new ExcerptProcessingException(FAILED, "Excerpt signage failed");
+        }
+      } else {
+        checksum = DigestUtils.sha256Hex(bytes);
+      }
+    } catch (ExcerptProcessingException e) {
+      throw e;
     } catch (Exception e) {
       throw new ExcerptProcessingException(FAILED, e.getMessage());
     }
+    updateExcerpt(event.getRecordId(), cephKey, checksum);
+  }
 
-    var excerptRecord = getRecordById(event.getRecordId());
+  private String getSignedChecksum(String cephKey) {
+    var signedExcerptContent =
+        datafactoryCephService
+            .getObject(bucket, cephKey)
+            .orElseThrow(
+                () ->
+                    new ExcerptProcessingException(FAILED, "Signed excerpt was not found in ceph"))
+            .getContent();
+    return DigestUtils.sha256Hex(signedExcerptContent);
+  }
+
+  private void updateExcerpt(UUID recordId, String cephKey, String checksum) {
+    var excerptRecord = getRecordById(recordId);
     excerptRecord.setStatus(COMPLETED);
     excerptRecord.setExcerptKey(cephKey);
-    excerptRecord.setChecksum(DigestUtils.sha256Hex(cephValue));
+    excerptRecord.setChecksum(checksum);
 
     excerptRecord.setUpdatedAt(LocalDateTime.now());
     recordRepository.save(excerptRecord);
