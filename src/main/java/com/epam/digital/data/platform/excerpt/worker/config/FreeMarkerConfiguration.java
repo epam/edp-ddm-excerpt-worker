@@ -1,6 +1,7 @@
 package com.epam.digital.data.platform.excerpt.worker.config;
 
 import freemarker.template.TemplateExceptionHandler;
+import java.util.TimeZone;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -20,6 +21,7 @@ public class FreeMarkerConfiguration {
     configuration.setTagSyntax(freemarker.template.Configuration.SQUARE_BRACKET_TAG_SYNTAX);
     configuration.setInterpolationSyntax(
         freemarker.template.Configuration.SQUARE_BRACKET_INTERPOLATION_SYNTAX);
+    configuration.setTimeZone(TimeZone.getTimeZone("Europe/Kiev"));
     return configuration;
   }
 
