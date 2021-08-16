@@ -16,7 +16,8 @@ spec:
   template:
     metadata:
       annotations:
-        sidecar.istio.io/inject: "false"
+        sidecar.istio.io/inject: "true"
+        traffic.sidecar.istio.io/excludeOutboundPorts: '5432'
       labels:
         app: {{.Values.name}}
         version: {{ .Values.version }}
