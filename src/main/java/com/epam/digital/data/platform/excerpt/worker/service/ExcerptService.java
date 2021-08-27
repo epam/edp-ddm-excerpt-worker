@@ -16,11 +16,15 @@ import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
 public class ExcerptService {
+
+  private final Logger log = LoggerFactory.getLogger(ExcerptService.class);
 
   private final ExcerptTemplateRepository templateRepository;
   private final ExcerptRecordRepository recordRepository;
@@ -50,7 +54,10 @@ public class ExcerptService {
           .findFirstByTemplateName(event.getExcerptType())
           .orElseThrow(() -> new ExcerptProcessingException(FAILED, "Excerpt template not found"));
 
+      log.info("Generating HTML");
       var html = renderer.templateToHtml(excerptTemplate, event.getExcerptInputData());
+
+      log.info("Generating PDF");
       var pdf = renderer.htmlToPdf(html);
 
       savePdf(event, pdf);
@@ -66,10 +73,15 @@ public class ExcerptService {
 
   private void savePdf(ExcerptEventDto event, byte[] bytes) {
     var cephKey = UUID.randomUUID().toString();
+    log.debug("Generated Ceph key: {}", cephKey);
+
     String checksum;
     try {
+      log.info("Storing Excerpt to Ceph");
       datafactoryCephService.putObject(bucket, cephKey, new CephObject(bytes, Map.of()));
+
       if (event.isRequiresSystemSignature()) {
+        log.info("Signing Excerpt");
         var signExcerptResponse =
                 digitalSignatureFileRestClient.sign(new SignFileRequestDto(cephKey));
         if (signExcerptResponse.isSigned()) {
@@ -85,6 +97,7 @@ public class ExcerptService {
     } catch (Exception e) {
       throw new ExcerptProcessingException(FAILED, e.getMessage());
     }
+
     updateExcerpt(event.getRecordId(), cephKey, checksum);
   }
 

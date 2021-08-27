@@ -11,7 +11,6 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.epam.digital.data.platform.dso.api.dto.SignFileRequestDto;
 import com.epam.digital.data.platform.dso.api.dto.SignFileResponseDto;
 import com.epam.digital.data.platform.dso.client.DigitalSignatureFileRestClient;
 import com.epam.digital.data.platform.excerpt.dao.ExcerptRecord;
@@ -22,7 +21,6 @@ import com.epam.digital.data.platform.excerpt.worker.repository.ExcerptRecordRep
 import com.epam.digital.data.platform.excerpt.worker.repository.ExcerptTemplateRepository;
 import com.epam.digital.data.platform.integration.ceph.dto.CephObject;
 import com.epam.digital.data.platform.integration.ceph.service.CephService;
-import java.util.Base64;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -257,3 +255,4 @@ class ExcerptServiceTest {
     return excerptTemplate;
   }
 }
+
