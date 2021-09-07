@@ -62,6 +62,8 @@ public class ExcerptService {
 
       savePdf(event, pdf);
     } catch (ExcerptProcessingException e) {
+      log.error("Can not generate excerpt", e);
+
       var excerptRecord = getRecordById(event.getRecordId());
       excerptRecord.setStatus(e.getStatus());
       excerptRecord.setStatusDetails(e.getDetails());
