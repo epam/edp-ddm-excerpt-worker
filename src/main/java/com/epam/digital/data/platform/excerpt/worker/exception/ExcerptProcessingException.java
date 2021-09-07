@@ -12,6 +12,12 @@ public class ExcerptProcessingException extends RuntimeException {
     this.details = details;
   }
 
+  public ExcerptProcessingException(ExcerptProcessingStatus status, String details, Exception cause) {
+    super(cause);
+    this.status = status;
+    this.details = details;
+  }
+
   public ExcerptProcessingStatus getStatus() {
     return status;
   }
