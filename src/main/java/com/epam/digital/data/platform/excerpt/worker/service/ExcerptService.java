@@ -97,7 +97,7 @@ public class ExcerptService {
     } catch (ExcerptProcessingException e) {
       throw e;
     } catch (Exception e) {
-      throw new ExcerptProcessingException(FAILED, e.getMessage());
+      throw new ExcerptProcessingException(FAILED, e.getMessage(), e);
     }
 
     updateExcerpt(event.getRecordId(), cephKey, checksum);
