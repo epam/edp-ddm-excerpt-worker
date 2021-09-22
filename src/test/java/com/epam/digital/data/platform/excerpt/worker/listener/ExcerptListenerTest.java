@@ -28,7 +28,7 @@ class ExcerptListenerTest {
   void callService() {
     var input = new Request<ExcerptEventDto>();
 
-    instance.read(input);
+    instance.generate(input);
 
     verify(excerptService).generateExcerpt(input.getPayload());
   }

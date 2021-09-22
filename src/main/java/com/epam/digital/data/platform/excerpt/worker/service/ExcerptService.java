@@ -61,6 +61,7 @@ public class ExcerptService {
       var pdf = renderer.htmlToPdf(html);
 
       savePdf(event, pdf);
+      log.info("Excerpt generated");
     } catch (ExcerptProcessingException e) {
       log.error("Can not generate excerpt", e);
 

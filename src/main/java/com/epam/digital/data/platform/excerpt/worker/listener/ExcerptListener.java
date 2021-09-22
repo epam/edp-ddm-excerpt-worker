@@ -23,7 +23,7 @@ public class ExcerptListener {
       topics = "\u0023{kafkaProperties.topic}",
       groupId = "\u0023{kafkaProperties.groupId}",
       containerFactory = "concurrentKafkaListenerContainerFactory")
-  public void read(Request<ExcerptEventDto> input) {
+  public void generate(Request<ExcerptEventDto> input) {
     log.info("Kafka event received");
     if (input.getPayload() != null) {
       log.debug(
@@ -33,7 +33,5 @@ public class ExcerptListener {
     }
 
     excerptService.generateExcerpt(input.getPayload());
-
-    log.info("Excerpt generated");
   }
 }
