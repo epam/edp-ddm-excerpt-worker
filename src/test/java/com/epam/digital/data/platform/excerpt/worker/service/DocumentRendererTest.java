@@ -8,7 +8,6 @@ import com.epam.digital.data.platform.excerpt.dao.ExcerptTemplate;
 import com.epam.digital.data.platform.excerpt.worker.config.FreeMarkerConfiguration;
 import com.epam.digital.data.platform.excerpt.worker.config.GenericConfig;
 import com.epam.digital.data.platform.excerpt.worker.exception.ExcerptProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import freemarker.template.Configuration;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,15 +22,13 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 class DocumentRendererTest {
 
   @Autowired
-  private ObjectMapper objectMapper;
-  @Autowired
   private Configuration freemarker;
 
   private DocumentRenderer documentRenderer;
 
   @BeforeEach
   void init() {
-    documentRenderer = new DocumentRenderer(freemarker, objectMapper);
+    documentRenderer = new DocumentRenderer(freemarker);
   }
 
   @Test
@@ -41,6 +38,14 @@ class DocumentRendererTest {
 
     assertThat(exception.getStatus()).isEqualTo(FAILED);
     assertThat(exception.getDetails()).isEqualTo("HTML to PDF conversion fails");
+  }
+
+  @Test
+  void htmlToPdfHappyPath() {
+    var bytes = documentRenderer.htmlToPdf("<html><head></head><body>Hello</body></html>");
+
+    System.out.println(bytes);
+    assertThat(bytes.length).isNotNull();
   }
 
   @Test
@@ -61,6 +66,18 @@ class DocumentRendererTest {
     excerptTemplate.setTemplate("");
     var exception = assertThrows(ExcerptProcessingException.class,
         () -> documentRenderer.templateToHtml(excerptTemplate, "{}"));
+
+    assertThat(exception.getStatus()).isEqualTo(FAILED);
+  }
+
+  @Test
+  void shouldConvertTemplateExceptionToExcerptProcessingException() {
+    var excerptTemplate = new ExcerptTemplate();
+    excerptTemplate.setTemplateName("Test");
+    excerptTemplate.setTemplate("My name is [=name]");
+
+    var exception = assertThrows(ExcerptProcessingException.class,
+        () -> documentRenderer.templateToHtml(excerptTemplate, Map.of(5, "Alex")));
 
     assertThat(exception.getStatus()).isEqualTo(FAILED);
   }
