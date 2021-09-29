@@ -94,11 +94,11 @@ class ExcerptServiceTest {
     when(recordRepository.findById(excerptId)).thenReturn(Optional.of(mockExcerptRecord));
 
     when(templateRepository.findFirstByTemplateName(templateName))
-            .thenReturn(Optional.of(mockExcerptTemplate()));
+        .thenReturn(Optional.of(mockExcerptTemplate()));
     when(digitalSignatureFileRestClient.sign(any()))
-            .thenReturn(new SignFileResponseDto(true));
+        .thenReturn(new SignFileResponseDto(true));
     when(datafactoryCephService.getObject(eq(BUCKET), anyString()))
-            .thenReturn(Optional.of(new CephObject(SIGNED_OBJ_BYTES, Map.of())));
+        .thenReturn(Optional.of(new CephObject(SIGNED_OBJ_BYTES, Map.of())));
 
     when(renderer.htmlToPdf(any())).thenReturn(RENDERED_PDF_BYTES);
 
@@ -110,7 +110,7 @@ class ExcerptServiceTest {
     assertThat(mockExcerptRecord.getStatusDetails()).isNull();
     assertThat(UUID.fromString(mockExcerptRecord.getExcerptKey())).isNotNull();
     assertThat(mockExcerptRecord.getChecksum())
-            .isEqualTo(DigestUtils.sha256Hex(SIGNED_OBJ_BYTES));
+        .isEqualTo(DigestUtils.sha256Hex(SIGNED_OBJ_BYTES));
     assertThat(mockExcerptRecord.getUpdatedAt()).isNotNull();
   }
 
@@ -193,20 +193,21 @@ class ExcerptServiceTest {
         () -> excerptService.generateExcerpt(input));
 
     assertThat(exception.getStatus()).isEqualTo(FAILED);
-    assertThat(exception.getDetails()).isEqualTo("Record not found");
+    assertThat(exception.getDetails()).isEqualTo(
+        "Record not found. Id: 11111111-1111-1111-1111-111111111111");
   }
 
   @Test
-  void writeErrorToDatabaseIfExceprtSignageFailure() {
+  void writeErrorToDatabaseIfExcerptSigningFailure() {
     // given
     var mockExcerptRecord = new ExcerptRecord();
     when(recordRepository.findById(excerptId)).thenReturn(Optional.of(mockExcerptRecord));
     when(templateRepository.findFirstByTemplateName(templateName))
-            .thenReturn(Optional.of(mockExcerptTemplate()));
+        .thenReturn(Optional.of(mockExcerptTemplate()));
     when(renderer.htmlToPdf(any())).thenReturn(RENDERED_PDF_BYTES);
 
     when(digitalSignatureFileRestClient.sign(any()))
-            .thenReturn(new SignFileResponseDto(false));
+        .thenReturn(new SignFileResponseDto(false));
 
     // when
     excerptService.generateExcerpt(mockExcerptEventDto(true));
@@ -215,7 +216,7 @@ class ExcerptServiceTest {
     verify(recordRepository).save(excerptRecordCaptor.capture());
     var res = excerptRecordCaptor.getValue();
     assertThat(res.getStatus()).isEqualTo(FAILED);
-    assertThat(res.getStatusDetails()).isEqualTo("Excerpt signage failed");
+    assertThat(res.getStatusDetails()).isEqualTo("Excerpt signing failed");
     assertThat(mockExcerptRecord.getUpdatedAt()).isNotNull();
   }
 
@@ -225,13 +226,13 @@ class ExcerptServiceTest {
     var mockExcerptRecord = new ExcerptRecord();
     when(recordRepository.findById(excerptId)).thenReturn(Optional.of(mockExcerptRecord));
     when(templateRepository.findFirstByTemplateName(templateName))
-            .thenReturn(Optional.of(mockExcerptTemplate()));
+        .thenReturn(Optional.of(mockExcerptTemplate()));
     when(renderer.htmlToPdf(any())).thenReturn(RENDERED_PDF_BYTES);
     when(digitalSignatureFileRestClient.sign(any()))
-            .thenReturn(new SignFileResponseDto(true));
+        .thenReturn(new SignFileResponseDto(true));
 
     when(datafactoryCephService.getObject(eq(BUCKET), anyString()))
-            .thenReturn(Optional.empty());
+        .thenReturn(Optional.empty());
 
     // when
     excerptService.generateExcerpt(mockExcerptEventDto(true));

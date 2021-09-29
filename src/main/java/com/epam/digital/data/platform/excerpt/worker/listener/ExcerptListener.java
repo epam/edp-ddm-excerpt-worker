@@ -26,7 +26,7 @@ public class ExcerptListener {
   public void generate(Request<ExcerptEventDto> input) {
     log.info("Kafka event received");
     if (input.getPayload() != null) {
-      log.debug(
+      log.info(
           "Generate Excerpt with template: {}, record id: {}",
           input.getPayload().getExcerptType(),
           input.getPayload().getRecordId());

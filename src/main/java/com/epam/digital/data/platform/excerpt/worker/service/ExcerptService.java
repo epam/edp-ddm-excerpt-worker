@@ -76,21 +76,20 @@ public class ExcerptService {
 
   private void savePdf(ExcerptEventDto event, byte[] bytes) {
     var cephKey = UUID.randomUUID().toString();
-    log.debug("Generated Ceph key: {}", cephKey);
 
     String checksum;
     try {
-      log.info("Storing Excerpt to Ceph");
+      log.info("Storing Excerpt to Ceph. Key: {}", cephKey);
       datafactoryCephService.putObject(bucket, cephKey, new CephObject(bytes, Map.of()));
 
       if (event.isRequiresSystemSignature()) {
         log.info("Signing Excerpt");
         var signExcerptResponse =
-                digitalSignatureFileRestClient.sign(new SignFileRequestDto(cephKey));
+            digitalSignatureFileRestClient.sign(new SignFileRequestDto(cephKey));
         if (signExcerptResponse.isSigned()) {
           checksum = getSignedChecksum(cephKey);
         } else {
-          throw new ExcerptProcessingException(FAILED, "Excerpt signage failed");
+          throw new ExcerptProcessingException(FAILED, "Excerpt signing failed");
         }
       } else {
         checksum = DigestUtils.sha256Hex(bytes);
@@ -116,6 +115,8 @@ public class ExcerptService {
   }
 
   private void updateExcerpt(UUID recordId, String cephKey, String checksum) {
+    log.info("Updating excerpt record. RecordId: {}. CephKey: {}. Checksum: {}",
+        recordId, cephKey, checksum);
     var excerptRecord = getRecordById(recordId);
     excerptRecord.setStatus(COMPLETED);
     excerptRecord.setExcerptKey(cephKey);
@@ -123,10 +124,11 @@ public class ExcerptService {
 
     excerptRecord.setUpdatedAt(LocalDateTime.now());
     recordRepository.save(excerptRecord);
+    log.info("Excerpt record updated");
   }
 
   private ExcerptRecord getRecordById(UUID id) {
     return recordRepository.findById(id).
-        orElseThrow(() -> new ExcerptProcessingException(FAILED, "Record not found"));
+        orElseThrow(() -> new ExcerptProcessingException(FAILED, "Record not found. Id: " + id));
   }
 }

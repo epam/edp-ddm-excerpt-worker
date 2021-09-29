@@ -26,20 +26,24 @@ public class DocumentRenderer {
   }
 
   public String templateToHtml(ExcerptTemplate excerptTemplate, Object jsonData) {
+    String generatingHtmlErrorMsg = "Generating HTML from template failed.Data: {}";
     try (var htmlReport = new StringWriter()) {
       var template = new Template(excerptTemplate.getTemplateName(),
           excerptTemplate.getTemplate(), freemarker);
       template.process(jsonData, htmlReport);
       return htmlReport.toString();
     } catch (TemplateException e) {
-      log.error("Template creation exception", e);
+      log.error("Template ot html conversion exception", e);
+      log.debug(generatingHtmlErrorMsg, jsonData);
       throw new ExcerptProcessingException(FAILED, "Template to HTML conversion fails");
     } catch (IOException e) {
       log.error("Template ot html conversion IOException", e);
+      log.debug(generatingHtmlErrorMsg, jsonData);
       throw new ExcerptProcessingException(FAILED,
           "IOException occurred while converting template to HTML");
     } catch (Exception e) {
       log.error("Template ot html conversion Exception", e);
+      log.debug(generatingHtmlErrorMsg, jsonData);
       throw new ExcerptProcessingException(FAILED, "Template to HTML conversion fails");
     }
   }
@@ -50,6 +54,7 @@ public class DocumentRenderer {
       return result.toByteArray();
     } catch (Exception e) {
       log.error("Html to pdf conversion exception", e);
+      log.debug("Generating PDF from HTML failed. HTML document: {}", html);
       throw new ExcerptProcessingException(FAILED, "HTML to PDF conversion fails");
     }
   }
