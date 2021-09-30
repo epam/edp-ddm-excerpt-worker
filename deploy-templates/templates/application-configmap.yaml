@@ -17,7 +17,3 @@ data:
 
     dso:
       url: {{ .Values.dso.url }}
-
-    logging:
-      level:
-        com.epam.digital.data.platform.excerpt.worker.service.DocumentRenderer: debug

@@ -157,7 +157,7 @@ class ExcerptServiceTest {
     verify(recordRepository).save(excerptRecordCaptor.capture());
     var res = excerptRecordCaptor.getValue();
     assertThat(res.getStatus()).isEqualTo(FAILED);
-    assertThat(res.getStatusDetails()).isEqualTo("message");
+    assertThat(res.getStatusDetails()).isEqualTo("Failed saving file to ceph");
     assertThat(mockExcerptRecord.getUpdatedAt()).isNotNull();
   }
 
@@ -216,7 +216,7 @@ class ExcerptServiceTest {
     verify(recordRepository).save(excerptRecordCaptor.capture());
     var res = excerptRecordCaptor.getValue();
     assertThat(res.getStatus()).isEqualTo(FAILED);
-    assertThat(res.getStatusDetails()).isEqualTo("Excerpt signing failed");
+    assertThat(res.getStatusDetails()).startsWith("Excerpt signing failed");
     assertThat(mockExcerptRecord.getUpdatedAt()).isNotNull();
   }
 
@@ -241,7 +241,7 @@ class ExcerptServiceTest {
     verify(recordRepository).save(excerptRecordCaptor.capture());
     var res = excerptRecordCaptor.getValue();
     assertThat(res.getStatus()).isEqualTo(FAILED);
-    assertThat(res.getStatusDetails()).isEqualTo("Signed excerpt was not found in ceph");
+    assertThat(res.getStatusDetails()).startsWith("Signed excerpt was not found in ceph");
     assertThat(mockExcerptRecord.getUpdatedAt()).isNotNull();
   }
 

@@ -4,6 +4,7 @@ import static com.epam.digital.data.platform.excerpt.model.ExcerptProcessingStat
 import static com.epam.digital.data.platform.excerpt.model.ExcerptProcessingStatus.FAILED;
 
 import com.epam.digital.data.platform.dso.api.dto.SignFileRequestDto;
+import com.epam.digital.data.platform.dso.api.dto.SignFileResponseDto;
 import com.epam.digital.data.platform.dso.client.DigitalSignatureFileRestClient;
 import com.epam.digital.data.platform.excerpt.dao.ExcerptRecord;
 import com.epam.digital.data.platform.excerpt.model.ExcerptEventDto;
@@ -14,6 +15,7 @@ import com.epam.digital.data.platform.integration.ceph.dto.CephObject;
 import com.epam.digital.data.platform.integration.ceph.service.CephService;
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.slf4j.Logger;
@@ -77,40 +79,53 @@ public class ExcerptService {
   private void savePdf(ExcerptEventDto event, byte[] bytes) {
     var cephKey = UUID.randomUUID().toString();
 
-    String checksum;
-    try {
-      log.info("Storing Excerpt to Ceph. Key: {}", cephKey);
-      datafactoryCephService.putObject(bucket, cephKey, new CephObject(bytes, Map.of()));
+    saveFileToCeph(cephKey, bytes);
 
-      if (event.isRequiresSystemSignature()) {
-        log.info("Signing Excerpt");
-        var signExcerptResponse =
-            digitalSignatureFileRestClient.sign(new SignFileRequestDto(cephKey));
-        if (signExcerptResponse.isSigned()) {
-          checksum = getSignedChecksum(cephKey);
-        } else {
-          throw new ExcerptProcessingException(FAILED, "Excerpt signing failed");
-        }
-      } else {
-        checksum = DigestUtils.sha256Hex(bytes);
-      }
-    } catch (ExcerptProcessingException e) {
-      throw e;
-    } catch (Exception e) {
-      throw new ExcerptProcessingException(FAILED, e.getMessage(), e);
-    }
+    String checksum =
+        event.isRequiresSystemSignature()
+            ? signFileAndGetChecksum(cephKey)
+            : DigestUtils.sha256Hex(bytes);
 
     updateExcerpt(event.getRecordId(), cephKey, checksum);
   }
 
+  private void saveFileToCeph(String cephKey, byte[] bytes) {
+    log.info("Storing Excerpt to Ceph. Key: {}", cephKey);
+    try {
+      datafactoryCephService.putObject(bucket, cephKey, new CephObject(bytes, Map.of()));
+    } catch (Exception e) {
+      throw new ExcerptProcessingException(FAILED, "Failed saving file to ceph", e);
+    }
+  }
+
+  private String signFileAndGetChecksum(String cephKey) {
+    log.info("Signing Excerpt. Key: {}", cephKey);
+    SignFileResponseDto signExcerptResponse;
+    try {
+      signExcerptResponse = digitalSignatureFileRestClient.sign(new SignFileRequestDto(cephKey));
+    } catch (Exception e) {
+      throw new ExcerptProcessingException(FAILED, "Excerpt signing failed. Key: " + cephKey, e);
+    }
+
+    if (signExcerptResponse.isSigned()) {
+      return getSignedChecksum(cephKey);
+    } else {
+      throw new ExcerptProcessingException(FAILED, "Excerpt signing failed. Key: " + cephKey);
+    }
+  }
+
   private String getSignedChecksum(String cephKey) {
-    var signedExcerptContent =
-        datafactoryCephService
-            .getObject(bucket, cephKey)
-            .orElseThrow(
-                () ->
-                    new ExcerptProcessingException(FAILED, "Signed excerpt was not found in ceph"))
-            .getContent();
+    Optional<CephObject> cephObject;
+    try {
+      cephObject = datafactoryCephService.getObject(bucket, cephKey);
+    } catch (Exception e) {
+      throw new ExcerptProcessingException(FAILED, "Failed retrieving ceph object by key: " + cephKey, e);
+    }
+
+    var signedExcerptContent = cephObject.orElseThrow(
+        () -> new ExcerptProcessingException(
+            FAILED, "Signed excerpt was not found in ceph. Key: " + cephKey)).getContent();
+
     return DigestUtils.sha256Hex(signedExcerptContent);
   }
 
