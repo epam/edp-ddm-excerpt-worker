@@ -123,9 +123,9 @@
       <artifactId>freemarker</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.itextpdf</groupId>
-      <artifactId>html2pdf</artifactId>
-      <version>3.0.3</version>
+      <groupId>com.openhtmltopdf</groupId>
+      <artifactId>openhtmltopdf-pdfbox</artifactId>
+      <version>1.0.8</version>
     </dependency>
 
     <dependency>

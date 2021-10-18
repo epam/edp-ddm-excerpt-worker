@@ -4,11 +4,9 @@ import static com.epam.digital.data.platform.excerpt.model.ExcerptProcessingStat
 
 import com.epam.digital.data.platform.excerpt.dao.ExcerptTemplate;
 import com.epam.digital.data.platform.excerpt.worker.exception.ExcerptProcessingException;
-import com.itextpdf.html2pdf.HtmlConverter;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringWriter;
 import org.slf4j.Logger;
@@ -16,41 +14,32 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 @Component
-public class DocumentRenderer {
+public class FreemarkerHtmlRenderer implements HtmlRenderer {
 
-  private final Logger log = LoggerFactory.getLogger(DocumentRenderer.class);
+  private final Logger log = LoggerFactory.getLogger(FreemarkerHtmlRenderer.class);
   private final Configuration freemarker;
 
-  public DocumentRenderer(Configuration freemarker) {
+  public FreemarkerHtmlRenderer(Configuration freemarker) {
     this.freemarker = freemarker;
   }
 
-  public String templateToHtml(ExcerptTemplate excerptTemplate, Object jsonData) {
+  @Override
+  public String render(ExcerptTemplate excerptTemplate, Object jsonData) {
     try (var htmlReport = new StringWriter()) {
       var template = new Template(excerptTemplate.getTemplateName(),
           excerptTemplate.getTemplate(), freemarker);
       template.process(jsonData, htmlReport);
       return htmlReport.toString();
     } catch (TemplateException e) {
-      log.error("Template ot html conversion exception", e);
+      log.error("Template to html conversion exception", e);
       throw new ExcerptProcessingException(FAILED, "Template to HTML conversion fails");
     } catch (IOException e) {
-      log.error("Template ot html conversion IOException", e);
+      log.error("Template to html conversion IOException", e);
       throw new ExcerptProcessingException(FAILED,
           "IOException occurred while converting template to HTML");
     } catch (Exception e) {
-      log.error("Template ot html conversion Exception", e);
+      log.error("Template to html conversion Exception", e);
       throw new ExcerptProcessingException(FAILED, "Template to HTML conversion fails");
-    }
-  }
-
-  public byte[] htmlToPdf(String html) {
-    try (var result = new ByteArrayOutputStream()) {
-      HtmlConverter.convertToPdf(html, result);
-      return result.toByteArray();
-    } catch (Exception e) {
-      log.error("Html to pdf conversion exception", e);
-      throw new ExcerptProcessingException(FAILED, "HTML to PDF conversion fails");
     }
   }
 }

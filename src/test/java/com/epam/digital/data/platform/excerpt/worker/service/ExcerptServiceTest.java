@@ -50,7 +50,9 @@ class ExcerptServiceTest {
   @Mock
   ExcerptRecordRepository recordRepository;
   @Mock
-  DocumentRenderer renderer;
+  HtmlRenderer htmlRenderer;
+  @Mock
+  PdfRenderer pdfRenderer;
   @Mock
   CephService datafactoryCephService;
   @Mock
@@ -60,8 +62,8 @@ class ExcerptServiceTest {
 
   @BeforeEach
   void init() {
-    excerptService = new ExcerptService(templateRepository,
-        recordRepository, renderer, datafactoryCephService, digitalSignatureFileRestClient, BUCKET);
+    excerptService = new ExcerptService(templateRepository, recordRepository, htmlRenderer,
+        pdfRenderer, datafactoryCephService, digitalSignatureFileRestClient, BUCKET);
   }
 
   @Test
@@ -73,7 +75,7 @@ class ExcerptServiceTest {
     when(templateRepository.findFirstByTemplateName(templateName))
         .thenReturn(Optional.of(mockExcerptTemplate()));
 
-    when(renderer.htmlToPdf(any())).thenReturn(RENDERED_PDF_BYTES);
+    when(pdfRenderer.render(any())).thenReturn(RENDERED_PDF_BYTES);
 
     // when
     excerptService.generateExcerpt(mockExcerptEventDto(false));
@@ -100,7 +102,7 @@ class ExcerptServiceTest {
     when(datafactoryCephService.getObject(eq(BUCKET), anyString()))
         .thenReturn(Optional.of(new CephObject(SIGNED_OBJ_BYTES, Map.of())));
 
-    when(renderer.htmlToPdf(any())).thenReturn(RENDERED_PDF_BYTES);
+    when(pdfRenderer.render(any())).thenReturn(RENDERED_PDF_BYTES);
 
     // when
     excerptService.generateExcerpt(mockExcerptEventDto(true));
@@ -123,7 +125,7 @@ class ExcerptServiceTest {
     when(templateRepository.findFirstByTemplateName(templateName))
         .thenReturn(Optional.of(mockExcerptTemplate()));
 
-    when(renderer.htmlToPdf(any())).thenReturn(RENDERED_PDF_BYTES);
+    when(pdfRenderer.render(any())).thenReturn(RENDERED_PDF_BYTES);
 
     // when
     excerptService.generateExcerpt(mockExcerptEventDto(false));
@@ -131,8 +133,8 @@ class ExcerptServiceTest {
     // then
     verify(datafactoryCephService)
         .putObject(eq(BUCKET), anyString(), eq(new CephObject(RENDERED_PDF_BYTES, Map.of())));
-    verify(renderer).templateToHtml(any(), any());
-    verify(renderer).htmlToPdf(any());
+    verify(htmlRenderer).render(any(), any());
+    verify(pdfRenderer).render(any());
     verify(recordRepository).save(any());
   }
 
@@ -145,7 +147,7 @@ class ExcerptServiceTest {
     when(templateRepository.findFirstByTemplateName(templateName))
         .thenReturn(Optional.of(mockExcerptTemplate()));
 
-    when(renderer.htmlToPdf(any())).thenReturn(RENDERED_PDF_BYTES);
+    when(pdfRenderer.render(any())).thenReturn(RENDERED_PDF_BYTES);
 
     doThrow(new RuntimeException("message"))
         .when(datafactoryCephService).putObject(any(), any(), any());
@@ -204,7 +206,7 @@ class ExcerptServiceTest {
     when(recordRepository.findById(excerptId)).thenReturn(Optional.of(mockExcerptRecord));
     when(templateRepository.findFirstByTemplateName(templateName))
         .thenReturn(Optional.of(mockExcerptTemplate()));
-    when(renderer.htmlToPdf(any())).thenReturn(RENDERED_PDF_BYTES);
+    when(pdfRenderer.render(any())).thenReturn(RENDERED_PDF_BYTES);
 
     when(digitalSignatureFileRestClient.sign(any()))
         .thenReturn(new SignFileResponseDto(false));
@@ -227,7 +229,7 @@ class ExcerptServiceTest {
     when(recordRepository.findById(excerptId)).thenReturn(Optional.of(mockExcerptRecord));
     when(templateRepository.findFirstByTemplateName(templateName))
         .thenReturn(Optional.of(mockExcerptTemplate()));
-    when(renderer.htmlToPdf(any())).thenReturn(RENDERED_PDF_BYTES);
+    when(pdfRenderer.render(any())).thenReturn(RENDERED_PDF_BYTES);
     when(digitalSignatureFileRestClient.sign(any()))
         .thenReturn(new SignFileResponseDto(true));
 

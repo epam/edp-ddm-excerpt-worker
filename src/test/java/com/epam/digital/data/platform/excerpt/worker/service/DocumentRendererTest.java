@@ -24,17 +24,18 @@ class DocumentRendererTest {
   @Autowired
   private Configuration freemarker;
 
-  private DocumentRenderer documentRenderer;
+  private HtmlRenderer htmlRenderer;
+  private PdfRenderer pdfRenderer = new OpenHtmlToPdfPdfRenderer();
 
   @BeforeEach
   void init() {
-    documentRenderer = new DocumentRenderer(freemarker);
+    htmlRenderer = new FreemarkerHtmlRenderer(freemarker);
   }
 
   @Test
   void shouldThrowExceptionWithHtmlToPdfConversionError() {
     var exception = assertThrows(ExcerptProcessingException.class,
-        () -> documentRenderer.htmlToPdf(""));
+        () -> pdfRenderer.render(""));
 
     assertThat(exception.getStatus()).isEqualTo(FAILED);
     assertThat(exception.getDetails()).isEqualTo("HTML to PDF conversion fails");
@@ -42,9 +43,8 @@ class DocumentRendererTest {
 
   @Test
   void htmlToPdfHappyPath() {
-    var bytes = documentRenderer.htmlToPdf("<html><head></head><body>Hello</body></html>");
+    var bytes = pdfRenderer.render("<html><head></head><body>Hello</body></html>");
 
-    System.out.println(bytes);
     assertThat(bytes.length).isNotNull();
   }
 
@@ -54,7 +54,7 @@ class DocumentRendererTest {
     excerptTemplate.setTemplateName("Test");
     excerptTemplate.setTemplate("My name is [=name]");
 
-    var html = documentRenderer.templateToHtml(excerptTemplate, Map.of("name", "Alex"));
+    var html = htmlRenderer.render(excerptTemplate, Map.of("name", "Alex"));
 
     assertThat(html).isEqualTo("My name is Alex");
   }
@@ -65,7 +65,7 @@ class DocumentRendererTest {
     excerptTemplate.setTemplateName("Test");
     excerptTemplate.setTemplate("");
     var exception = assertThrows(ExcerptProcessingException.class,
-        () -> documentRenderer.templateToHtml(excerptTemplate, "{}"));
+        () -> htmlRenderer.render(excerptTemplate, "{}"));
 
     assertThat(exception.getStatus()).isEqualTo(FAILED);
   }
@@ -77,7 +77,7 @@ class DocumentRendererTest {
     excerptTemplate.setTemplate("My name is [=name]");
 
     var exception = assertThrows(ExcerptProcessingException.class,
-        () -> documentRenderer.templateToHtml(excerptTemplate, Map.of(5, "Alex")));
+        () -> htmlRenderer.render(excerptTemplate, Map.of(5, "Alex")));
 
     assertThat(exception.getStatus()).isEqualTo(FAILED);
   }

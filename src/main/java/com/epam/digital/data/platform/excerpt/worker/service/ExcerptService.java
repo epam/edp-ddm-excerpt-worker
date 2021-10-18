@@ -30,7 +30,8 @@ public class ExcerptService {
 
   private final ExcerptTemplateRepository templateRepository;
   private final ExcerptRecordRepository recordRepository;
-  private final DocumentRenderer renderer;
+  private final HtmlRenderer htmlRenderer;
+  private final PdfRenderer pdfRenderer;
   private final CephService datafactoryCephService;
   private final DigitalSignatureFileRestClient digitalSignatureFileRestClient;
   private final String bucket;
@@ -38,13 +39,15 @@ public class ExcerptService {
   public ExcerptService(
       ExcerptTemplateRepository templateRepository,
       ExcerptRecordRepository recordRepository,
-      DocumentRenderer renderer,
+      HtmlRenderer htmlRenderer,
+      PdfRenderer pdfRenderer,
       CephService datafactoryCephService,
       DigitalSignatureFileRestClient digitalSignatureFileRestClient,
       @Value("${datafactory-excerpt-ceph.bucket}") String bucket) {
     this.templateRepository = templateRepository;
+    this.htmlRenderer = htmlRenderer;
     this.recordRepository = recordRepository;
-    this.renderer = renderer;
+    this.pdfRenderer = pdfRenderer;
     this.datafactoryCephService = datafactoryCephService;
     this.digitalSignatureFileRestClient = digitalSignatureFileRestClient;
     this.bucket = bucket;
@@ -57,10 +60,10 @@ public class ExcerptService {
           .orElseThrow(() -> new ExcerptProcessingException(FAILED, "Excerpt template not found"));
 
       log.info("Generating HTML");
-      var html = renderer.templateToHtml(excerptTemplate, event.getExcerptInputData());
+      var html = htmlRenderer.render(excerptTemplate, event.getExcerptInputData());
 
       log.info("Generating PDF");
-      var pdf = renderer.htmlToPdf(html);
+      var pdf = pdfRenderer.render(html);
 
       savePdf(event, pdf);
       log.info("Excerpt generated");
@@ -119,7 +122,8 @@ public class ExcerptService {
     try {
       cephObject = datafactoryCephService.getObject(bucket, cephKey);
     } catch (Exception e) {
-      throw new ExcerptProcessingException(FAILED, "Failed retrieving ceph object by key: " + cephKey, e);
+      throw new ExcerptProcessingException(FAILED,
+          "Failed retrieving ceph object by key: " + cephKey, e);
     }
 
     var signedExcerptContent = cephObject.orElseThrow(
