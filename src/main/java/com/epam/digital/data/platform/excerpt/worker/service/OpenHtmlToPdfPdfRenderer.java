@@ -8,7 +8,6 @@ import java.io.ByteArrayOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import org.springframework.util.ResourceUtils;
 
 @Component
 public class OpenHtmlToPdfPdfRenderer implements PdfRenderer {
@@ -18,10 +17,10 @@ public class OpenHtmlToPdfPdfRenderer implements PdfRenderer {
   @Override
   public byte[] render(String html) {
     try (var result = new ByteArrayOutputStream()) {
-      var font = ResourceUtils.getFile("classpath:fonts/Helvetica.ttf");
+      var font = this.getClass().getResourceAsStream("/fonts/Helvetica.ttf");
 
       new PdfRendererBuilder().toStream(result)
-          .useFont(font, "Helvetica")
+          .useFont(() -> font, "Helvetica")
           .withHtmlContent(html, "/")
           .run();
 
