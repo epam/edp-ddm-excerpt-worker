@@ -90,6 +90,11 @@ spec:
                 configMapKeyRef:
                   name: {{ .Values.datafactoryExcerptCeph.bucketName }}
                   key: BUCKET_NAME
+            - name: DATAFACTORY_EXCERPT_CEPH_BUCKET_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.datafactoryExcerptCeph.bucketName }}
+                  key: BUCKET_HOST
       initContainers:
         - name: init
           image: {{ .Values.dockerProxyRegistry }}/busybox

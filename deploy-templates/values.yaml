@@ -25,7 +25,7 @@ db:
   connectionTimeout: 4000
 
 datafactoryExcerptCeph:
-  httpEndpoint: http://s3.openshift-storage.svc.cluster.local
+  httpEndpoint: ${DATAFACTORY_EXCERPT_CEPH_BUCKET_HOST}
   bucketName: file-excerpt-bucket
 
 monitoring:
