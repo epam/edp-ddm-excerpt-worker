@@ -17,10 +17,10 @@ public class OpenHtmlToPdfPdfRenderer implements PdfRenderer {
   @Override
   public byte[] render(String html) {
     try (var result = new ByteArrayOutputStream()) {
-      var font = this.getClass().getResourceAsStream("/fonts/Helvetica.ttf");
+      var font = this.getClass().getResourceAsStream("/fonts/DejaVuSans.ttf");
 
       new PdfRendererBuilder().toStream(result)
-          .useFont(() -> font, "Helvetica")
+          .useFont(() -> font, "DejaVu Sans")
           .withHtmlContent(html, "/")
           .run();
 
