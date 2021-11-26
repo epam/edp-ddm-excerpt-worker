@@ -30,3 +30,5 @@ This service generates PDF excerpt files based on input from Kafka topic.
 2. Add `--spring.profiles.active=local` to application run arguments
 3. Run application with your favourite IDE or via `java -jar ...` with jar file, created above
 
+### License
+excerpt-worker is Open Source software released under the Apache 2.0 license.
