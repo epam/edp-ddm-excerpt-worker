@@ -27,10 +27,13 @@ import com.epam.digital.data.platform.excerpt.model.ExcerptEventDto;
 import com.epam.digital.data.platform.excerpt.worker.exception.ExcerptProcessingException;
 import com.epam.digital.data.platform.excerpt.worker.repository.ExcerptRecordRepository;
 import com.epam.digital.data.platform.excerpt.worker.repository.ExcerptTemplateRepository;
-import com.epam.digital.data.platform.integration.ceph.dto.CephObject;
+import com.epam.digital.data.platform.integration.ceph.model.CephObject;
 import com.epam.digital.data.platform.integration.ceph.service.CephService;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.Map;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.UUID;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -43,6 +46,8 @@ import org.springframework.stereotype.Service;
 public class ExcerptService {
 
   private final Logger log = LoggerFactory.getLogger(ExcerptService.class);
+
+  static final String EXCERPT_CONTENT_TYPE = "application/octet-stream";
 
   private final ExcerptTemplateRepository templateRepository;
   private final ExcerptRecordRepository recordRepository;
@@ -111,7 +116,8 @@ public class ExcerptService {
   private void saveFileToCeph(String cephKey, byte[] bytes) {
     log.info("Storing Excerpt to Ceph. Key: {}", cephKey);
     try {
-      datafactoryCephService.putObject(bucket, cephKey, new CephObject(bytes, Map.of()));
+      datafactoryCephService.put(
+          bucket, cephKey, EXCERPT_CONTENT_TYPE, Collections.emptyMap(), new ByteArrayInputStream(bytes));
     } catch (Exception e) {
       throw new ExcerptProcessingException(FAILED, "Failed saving file to ceph", e);
     }
@@ -136,17 +142,25 @@ public class ExcerptService {
   private String getSignedChecksum(String cephKey) {
     Optional<CephObject> cephObject;
     try {
-      cephObject = datafactoryCephService.getObject(bucket, cephKey);
+      cephObject = datafactoryCephService.get(bucket, cephKey);
     } catch (Exception e) {
       throw new ExcerptProcessingException(FAILED,
           "Failed retrieving ceph object by key: " + cephKey, e);
     }
 
-    var signedExcerptContent = cephObject.orElseThrow(
-        () -> new ExcerptProcessingException(
-            FAILED, "Signed excerpt was not found in ceph. Key: " + cephKey)).getContent();
+    var signedExcerptContentStream =
+        cephObject
+            .orElseThrow(
+                () ->
+                    new ExcerptProcessingException(
+                        FAILED, "Signed excerpt was not found in ceph. Key: " + cephKey))
+            .getContent();
 
-    return DigestUtils.sha256Hex(signedExcerptContent);
+    try {
+      return DigestUtils.sha256Hex(signedExcerptContentStream);
+    } catch (IOException e) {
+      throw new ExcerptProcessingException(FAILED, "Failed reading excerpt content from stream", e);
+    }
   }
 
   private void updateExcerpt(UUID recordId, String cephKey, String checksum) {

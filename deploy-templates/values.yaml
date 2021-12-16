@@ -31,6 +31,13 @@ datafactoryExcerptCeph:
   httpEndpoint: ${DATAFACTORY_EXCERPT_CEPH_BUCKET_HOST}
   bucketName: file-excerpt-bucket
 
+s3:
+  config:
+    client:
+      protocol: http
+    options:
+      pathStyleAccess: true
+
 monitoring:
   namespace: openshift-monitoring
   prometheusScrapePath: /actuator/prometheus

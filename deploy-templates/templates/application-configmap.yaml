@@ -15,5 +15,10 @@ data:
       http-endpoint: {{ .Values.datafactoryExcerptCeph.httpEndpoint }}
       bucketName: {{ .Values.datafactoryExcerptCeph.bucketName }}
 
+    s3:
+      config:
+        client: {{ .Values.s3.config.client | toYaml | nindent 10 }}
+        options: {{ .Values.s3.config.options | toYaml | nindent 10 }}
+
     dso:
       url: {{ .Values.dso.url }}

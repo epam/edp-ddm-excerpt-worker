@@ -18,6 +18,7 @@ package com.epam.digital.data.platform.excerpt.worker.service;
 
 import static com.epam.digital.data.platform.excerpt.model.ExcerptProcessingStatus.COMPLETED;
 import static com.epam.digital.data.platform.excerpt.model.ExcerptProcessingStatus.FAILED;
+import static com.epam.digital.data.platform.excerpt.worker.service.ExcerptService.EXCERPT_CONTENT_TYPE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -35,8 +36,12 @@ import com.epam.digital.data.platform.excerpt.model.ExcerptEventDto;
 import com.epam.digital.data.platform.excerpt.worker.exception.ExcerptProcessingException;
 import com.epam.digital.data.platform.excerpt.worker.repository.ExcerptRecordRepository;
 import com.epam.digital.data.platform.excerpt.worker.repository.ExcerptTemplateRepository;
-import com.epam.digital.data.platform.integration.ceph.dto.CephObject;
+import com.epam.digital.data.platform.integration.ceph.model.CephObject;
+import com.epam.digital.data.platform.integration.ceph.model.CephObjectMetadata;
 import com.epam.digital.data.platform.integration.ceph.service.CephService;
+
+import java.io.ByteArrayInputStream;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -115,8 +120,11 @@ class ExcerptServiceTest {
         .thenReturn(Optional.of(mockExcerptTemplate()));
     when(digitalSignatureFileRestClient.sign(any()))
         .thenReturn(new SignFileResponseDto(true));
-    when(datafactoryCephService.getObject(eq(BUCKET), anyString()))
-        .thenReturn(Optional.of(new CephObject(SIGNED_OBJ_BYTES, Map.of())));
+    when(datafactoryCephService.get(eq(BUCKET), anyString()))
+        .thenReturn(Optional.of(CephObject.builder()
+                .content(new ByteArrayInputStream(SIGNED_OBJ_BYTES))
+                .metadata(CephObjectMetadata.builder().build())
+                .build()));
 
     when(pdfRenderer.render(any())).thenReturn(RENDERED_PDF_BYTES);
 
@@ -146,9 +154,16 @@ class ExcerptServiceTest {
     // when
     excerptService.generateExcerpt(mockExcerptEventDto(false));
 
+    var actualContentCapture = ArgumentCaptor.forClass(ByteArrayInputStream.class);
     // then
     verify(datafactoryCephService)
-        .putObject(eq(BUCKET), anyString(), eq(new CephObject(RENDERED_PDF_BYTES, Map.of())));
+        .put(
+            eq(BUCKET),
+            anyString(),
+            eq(EXCERPT_CONTENT_TYPE),
+            eq(Collections.emptyMap()),
+            actualContentCapture.capture());
+    assertThat(actualContentCapture.getValue().readAllBytes()).isEqualTo(RENDERED_PDF_BYTES);
     verify(htmlRenderer).render(any(), any());
     verify(pdfRenderer).render(any());
     verify(recordRepository).save(any());
@@ -166,7 +181,8 @@ class ExcerptServiceTest {
     when(pdfRenderer.render(any())).thenReturn(RENDERED_PDF_BYTES);
 
     doThrow(new RuntimeException("message"))
-        .when(datafactoryCephService).putObject(any(), any(), any());
+        .when(datafactoryCephService)
+        .put(any(), any(), any(), any(), any());
 
     // when
     excerptService.generateExcerpt(mockExcerptEventDto(false));
@@ -249,7 +265,7 @@ class ExcerptServiceTest {
     when(digitalSignatureFileRestClient.sign(any()))
         .thenReturn(new SignFileResponseDto(true));
 
-    when(datafactoryCephService.getObject(eq(BUCKET), anyString()))
+    when(datafactoryCephService.get(eq(BUCKET), anyString()))
         .thenReturn(Optional.empty());
 
     // when
