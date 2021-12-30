@@ -49,7 +49,5 @@ probes:
   readiness:
     path: /actuator/health/readiness
 
-dockerProxyRegistry: nexus-docker-registry.apps.cicd2.mdtu-ddm.projects.epam.com
-
 dso:
   url: http://digital-signature-ops:8080
