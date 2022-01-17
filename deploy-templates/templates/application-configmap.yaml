@@ -10,6 +10,8 @@ data:
         connection-timeout: {{.Values.db.connectionTimeout}}
       kafka:
         bootstrap: {{ .Values.kafka.service }}
+      signature:
+        enabled: true
 
     datafactory-excerpt-ceph:
       http-endpoint: {{ .Values.datafactoryExcerptCeph.httpEndpoint }}

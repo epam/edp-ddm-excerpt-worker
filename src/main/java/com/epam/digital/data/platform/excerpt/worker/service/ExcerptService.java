@@ -55,6 +55,7 @@ public class ExcerptService {
   private final PdfRenderer pdfRenderer;
   private final CephService datafactoryCephService;
   private final DigitalSignatureFileRestClient digitalSignatureFileRestClient;
+  private final boolean isDigitalSignatureEnabled;
   private final String bucket;
 
   public ExcerptService(
@@ -64,6 +65,7 @@ public class ExcerptService {
       PdfRenderer pdfRenderer,
       CephService datafactoryCephService,
       DigitalSignatureFileRestClient digitalSignatureFileRestClient,
+      @Value("${data-platform.signature.enabled}") boolean isDigitalSignatureEnabled,
       @Value("${datafactory-excerpt-ceph.bucket}") String bucket) {
     this.templateRepository = templateRepository;
     this.htmlRenderer = htmlRenderer;
@@ -71,6 +73,7 @@ public class ExcerptService {
     this.pdfRenderer = pdfRenderer;
     this.datafactoryCephService = datafactoryCephService;
     this.digitalSignatureFileRestClient = digitalSignatureFileRestClient;
+    this.isDigitalSignatureEnabled = isDigitalSignatureEnabled;
     this.bucket = bucket;
   }
 
@@ -105,10 +108,8 @@ public class ExcerptService {
 
     saveFileToCeph(cephKey, bytes);
 
-    String checksum =
-        event.isRequiresSystemSignature()
-            ? signFileAndGetChecksum(cephKey)
-            : DigestUtils.sha256Hex(bytes);
+    var shouldSign = event.isRequiresSystemSignature() && isDigitalSignatureEnabled;
+    String checksum = shouldSign ? signFileAndGetChecksum(cephKey) : DigestUtils.sha256Hex(bytes);
 
     updateExcerpt(event.getRecordId(), cephKey, checksum);
   }

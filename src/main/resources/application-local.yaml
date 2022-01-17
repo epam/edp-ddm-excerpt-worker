@@ -12,6 +12,8 @@ data-platform:
     password: qwerty
   kafka:
     bootstrap: localhost:9092
+  signature:
+    enabled: false
 
 management:
   endpoint:

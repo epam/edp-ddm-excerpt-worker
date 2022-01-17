@@ -25,6 +25,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -83,8 +85,16 @@ class ExcerptServiceTest {
 
   @BeforeEach
   void init() {
-    excerptService = new ExcerptService(templateRepository, recordRepository, htmlRenderer,
-        pdfRenderer, datafactoryCephService, digitalSignatureFileRestClient, BUCKET);
+    excerptService =
+        new ExcerptService(
+            templateRepository,
+            recordRepository,
+            htmlRenderer,
+            pdfRenderer,
+            datafactoryCephService,
+            digitalSignatureFileRestClient,
+            true,
+            BUCKET);
   }
 
   @Test
@@ -138,6 +148,35 @@ class ExcerptServiceTest {
     assertThat(mockExcerptRecord.getChecksum())
         .isEqualTo(DigestUtils.sha256Hex(SIGNED_OBJ_BYTES));
     assertThat(mockExcerptRecord.getUpdatedAt()).isNotNull();
+  }
+
+  @Test
+  void saveOnGenerationWithDisabledDigSignProcessing() {
+    excerptService =
+            new ExcerptService(
+                    templateRepository,
+                    recordRepository,
+                    htmlRenderer,
+                    pdfRenderer,
+                    datafactoryCephService,
+                    digitalSignatureFileRestClient,
+                    false,
+                    BUCKET);
+    // given
+    var mockExcerptRecord = new ExcerptRecord();
+    when(recordRepository.findById(excerptId)).thenReturn(Optional.of(mockExcerptRecord));
+
+    when(templateRepository.findFirstByTemplateName(templateName))
+            .thenReturn(Optional.of(mockExcerptTemplate()));
+
+    when(pdfRenderer.render(any())).thenReturn(RENDERED_PDF_BYTES);
+
+    // when
+    excerptService.generateExcerpt(mockExcerptEventDto(true));
+
+    // then
+    verify(digitalSignatureFileRestClient, never()).sign(any());
+    verify(datafactoryCephService, never()).get(any(), any());
   }
 
   @Test
