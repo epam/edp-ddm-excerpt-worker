@@ -18,6 +18,7 @@ package com.epam.digital.data.platform.excerpt.worker.listener;
 
 import com.epam.digital.data.platform.excerpt.model.ExcerptEventDto;
 import com.epam.digital.data.platform.excerpt.model.Request;
+import com.epam.digital.data.platform.excerpt.worker.audit.AuditableListener;
 import com.epam.digital.data.platform.excerpt.worker.service.ExcerptService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +36,7 @@ public class ExcerptListener {
     this.excerptService = excerptService;
   }
 
+  @AuditableListener(action = "EXCERPT GENERATION")
   @KafkaListener(
       topics = "\u0023{kafkaProperties.topic}",
       groupId = "\u0023{kafkaProperties.groupId}",

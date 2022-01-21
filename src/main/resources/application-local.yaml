@@ -44,3 +44,9 @@ s3:
       protocol: http
     options:
       pathStyleAccess: true
+
+audit:
+  kafka:
+    bootstrap: localhost:9092
+    topic: audit-events
+    schema-registry-url: http://localhost:8081

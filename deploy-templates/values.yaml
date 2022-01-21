@@ -51,3 +51,8 @@ probes:
 
 dso:
   url: http://digital-signature-ops:8080
+
+audit:
+  kafka:
+    topic: audit-events
+    schemaRegistryUrl: http://kafka-schema-registry:8081
