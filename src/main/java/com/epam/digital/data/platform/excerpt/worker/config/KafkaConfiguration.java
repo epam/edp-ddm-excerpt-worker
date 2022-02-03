@@ -19,8 +19,11 @@ package com.epam.digital.data.platform.excerpt.worker.config;
 import com.epam.digital.data.platform.excerpt.worker.config.properties.KafkaProperties;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.config.SslConfigs;
 import org.apache.kafka.common.serialization.Serializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -44,6 +47,9 @@ import org.springframework.util.backoff.ExponentialBackOff;
 
 @Configuration
 public class KafkaConfiguration {
+
+  private static final String CERTIFICATES_TYPE = "PEM";
+  private static final String SECURITY_PROTOCOL = "SSL";
 
   private final KafkaProperties kafkaProperties;
 
@@ -72,6 +78,9 @@ public class KafkaConfiguration {
     props.put(ErrorHandlingDeserializer.KEY_DESERIALIZER_CLASS, StringDeserializer.class);
     props.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, JsonDeserializer.class);
 
+    if (kafkaProperties.getSsl().isEnabled()) {
+      props.putAll(createSslProperties());
+    }
     return props;
   }
 
@@ -93,6 +102,9 @@ public class KafkaConfiguration {
   public Map<String, Object> producerConfigs() {
     Map<String, Object> props = new HashMap<>();
     props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.getBootstrap());
+    if (kafkaProperties.getSsl().isEnabled()) {
+      props.putAll(createSslProperties());
+    }
     return props;
   }
 
@@ -129,5 +141,16 @@ public class KafkaConfiguration {
         errorHandler.getMultiplier());
     backOff.setMaxElapsedTime(errorHandler.getMaxElapsedeTime());
     return new SeekToCurrentErrorHandler(recoverer, backOff);
+  }
+
+  private Map<String, Object> createSslProperties() {
+    return Map.of(
+            CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, SECURITY_PROTOCOL,
+            SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, CERTIFICATES_TYPE,
+            SslConfigs.SSL_KEYSTORE_TYPE_CONFIG, CERTIFICATES_TYPE,
+            SslConfigs.SSL_TRUSTSTORE_CERTIFICATES_CONFIG, kafkaProperties.getSsl().getTruststoreCertificate(),
+            SslConfigs.SSL_KEYSTORE_CERTIFICATE_CHAIN_CONFIG, kafkaProperties.getSsl().getKeystoreCertificate(),
+            SslConfigs.SSL_KEYSTORE_KEY_CONFIG, kafkaProperties.getSsl().getKeystoreKey()
+    );
   }
 }

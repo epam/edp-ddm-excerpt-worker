@@ -12,6 +12,8 @@ data-platform:
     password: qwerty
   kafka:
     bootstrap: localhost:9092
+    ssl:
+      enabled: false
   signature:
     enabled: false
 
@@ -50,3 +52,5 @@ audit:
     bootstrap: localhost:9092
     topic: audit-events
     schema-registry-url: http://localhost:8081
+    ssl:
+      enabled: false
