@@ -38,8 +38,8 @@ public class ExcerptListener {
 
   @AuditableListener(action = "EXCERPT GENERATION")
   @KafkaListener(
-      topics = "\u0023{kafkaProperties.topic}",
-      groupId = "\u0023{kafkaProperties.groupId}",
+      topics = "\u0023{kafkaProperties.topics['generate-excerpt']}",
+      groupId = "\u0023{kafkaProperties.consumer.groupId}",
       containerFactory = "concurrentKafkaListenerContainerFactory")
   public void generate(Request<ExcerptEventDto> input) {
     log.info("Kafka event received");

@@ -50,11 +50,20 @@ datafactory-excerpt-ceph:
 
 data-platform:
   kafka:
-    group-id: excerpt-worker
-    trusted-packages:
-      - com.epam.digital.data.platform.excerpt.model
+    consumer:
+      enabled: true
+      group-id: excerpt-worker
+      key-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      trusted-packages:
+        - com.epam.digital.data.platform.excerpt.model
+      custom-config:
+        "[spring.deserializer.key.delegate.class]": org.apache.kafka.common.serialization.StringDeserializer
+        "[spring.deserializer.value.delegate.class]": org.springframework.kafka.support.serializer.JsonDeserializer
+        "[isolation.level]": read_committed
+    topics:
+      generate-excerpt: generate-excerpt
     error-handler:
       initial-interval: 1500
-      max-elapsede-time: 6000
+      max-elapsed-time: 6000
       multiplier: 2
-    topic: generate-excerpt
