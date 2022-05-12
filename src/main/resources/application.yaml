@@ -63,7 +63,3 @@ data-platform:
         "[isolation.level]": read_committed
     topics:
       generate-excerpt: generate-excerpt
-    error-handler:
-      initial-interval: 1500
-      max-elapsed-time: 6000
-      multiplier: 2
