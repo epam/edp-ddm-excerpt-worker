@@ -5,6 +5,8 @@ name: excerpt-worker
 
 version: 1.1.0
 
+deployProfile: prod
+
 port: 8080
 
 java:
