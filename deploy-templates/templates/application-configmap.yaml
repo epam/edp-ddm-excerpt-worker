@@ -4,6 +4,11 @@ metadata:
   name: excerpt-worker-properties
 data:
   config.yaml: |-
+    {{- if eq .Values.deployProfile "dev" }}
+    management.endpoints.web.exposure.include: '*'
+    {{- else }}
+    management.endpoints.web.exposure.include: 'health, prometheus'
+    {{- end }}
     data-platform:
       datasource:
         url: jdbc:postgresql://{{.Values.db.url}}:{{.Values.db.port}}/{{.Values.db.name}}
