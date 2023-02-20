@@ -27,6 +27,7 @@
     <java.version>11</java.version>
     <spring.boot.version>2.6.14</spring.boot.version>
     <spring.cloud.version>2021.0.0</spring.cloud.version>
+    <postgresql.version>42.3.3</postgresql.version>
     <apache.commons.version>2.8.0</apache.commons.version>
     <jackson.core.version>2.13.4</jackson.core.version>
     <snakeyaml.version>1.33</snakeyaml.version>
@@ -200,6 +201,7 @@
     <dependency>
       <groupId>org.postgresql</groupId>
       <artifactId>postgresql</artifactId>
+      <version>${postgresql.version}</version>
     </dependency>
 
     <dependency>
