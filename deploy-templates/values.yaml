@@ -20,7 +20,8 @@ service:
   port: 8080
 
 kafka:
-  service: kafka-cluster-kafka-bootstrap:9093
+  url: kafka-cluster-kafka-bootstrap
+  port: 9093
   user: excerpt-worker-user
   clusterName: kafka-cluster
   sslEnabled: true
