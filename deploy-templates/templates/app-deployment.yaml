@@ -6,7 +6,9 @@ metadata:
     app: {{.Values.name}}
     version: {{ .Values.version }}
 spec:
-  replicas: 1
+  {{- if not .Values.global.registry.excerptWorker.hpa.enabled }}
+  replicas: {{ .Values.global.registry.excerptWorker.replicas }}
+  {{- end }}
   selector:
     matchLabels:
       app: {{.Values.name}}
@@ -15,9 +17,18 @@ spec:
     type: RollingUpdate
   template:
     metadata:
+      {{- if or .Values.podAnnotations .Values.global.registry.excerptWorker.istio.sidecar.enabled }}
       annotations:
+        {{- if .Values.global.registry.excerptWorker.istio.sidecar.enabled }}
         sidecar.istio.io/inject: "true"
         traffic.sidecar.istio.io/excludeOutboundPorts: '5432,9093'
+        {{- if .Values.global.istio.sidecar.requestsLimitsEnabled }}
+        {{- include "excerptWorker.istioResources" . | nindent 8 }}
+        {{- else }}
+        inject.istio.io/templates: 'sidecar,emptyRequestsLimits'
+        {{- end }}
+        {{- end }}
+      {{- end }}
       labels:
         app: {{.Values.name}}
         version: {{ .Values.version }}
@@ -31,14 +42,9 @@ spec:
           - containerPort: {{ .Values.port }}
             protocol: TCP
           imagePullPolicy: Always
-          {{- if not .Values.global.disableRequestsLimits }}
+          {{- if .Values.global.container.requestsLimitsEnabled }}
           resources:
-            limits:
-              cpu: 400m
-              memory: 800Mi
-            requests:
-              cpu: 400m
-              memory: 800Mi
+            {{- toYaml .Values.global.registry.excerptWorker.container.resources | nindent 12 }}
           {{- end }}
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
@@ -46,6 +52,9 @@ spec:
             httpGet:
               path: {{ .Values.probes.liveness.path }}
               port: {{ .Values.port }}
+              httpHeaders:
+                - name: X-B3-Sampled
+                  value: "0"
             failureThreshold: 1
             initialDelaySeconds: 180
             periodSeconds: 20
@@ -55,6 +64,9 @@ spec:
             httpGet:
               path: {{ .Values.probes.readiness.path }}
               port: {{ .Values.port }}
+              httpHeaders:
+                - name: X-B3-Sampled
+                  value: "0"
             failureThreshold: 5
             initialDelaySeconds: 60
             periodSeconds: 20
@@ -72,8 +84,10 @@ spec:
               name: {{ .Chart.Name }}-datafactory-excerpt-ceph-bucket-credentials
               readOnly: true
           env:
-            - name: JAVA_OPTS
-              value: {{ .Values.java.javaOpts }}
+            {{- range $name, $value := .Values.global.registry.excerptWorker.container.envVars }}
+            - name: {{ $name }}
+              value: {{ $value | quote }}
+            {{- end }}
             - name: DB_URL
               value: {{ .Values.db.url }}
             - name: DB_NAME

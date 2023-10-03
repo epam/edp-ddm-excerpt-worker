@@ -15,6 +15,10 @@ data:
         connection-timeout: {{.Values.db.connectionTimeout}}
       kafka:
         bootstrap: {{ .Values.kafka.url }}:{{ .Values.kafka.port }}
+        topic-properties:
+          creation:
+            num-partitions: {{ .Values.kafka.numPartitions }}
+            replication-factor: {{ .Values.global.kafkaOperator.replicationFactor }}
         ssl:
           enabled: {{ .Values.kafka.sslEnabled }}
           keystore-type: {{ .Values.kafka.sslCertType }}
@@ -22,6 +26,8 @@ data:
           keystore-certificate: {{ .Values.kafka.sslUserCertificate }}
           keystore-key: {{ .Values.kafka.sslUserKey }}
           truststore-certificate: {{ .Values.kafka.sslClusterCertificate }}
+        consumer:
+          concurrency: {{ .Values.kafka.consumer.concurrency }}
       signature:
         enabled: true
 
