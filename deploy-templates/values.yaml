@@ -10,7 +10,7 @@ deployProfile: prod
 port: 8080
 
 java:
-  javaOpts: -Xms330m -Xmx330m -Xmn200m -XX:+AlwaysPreTouch -XX:+UseG1GC
+  javaOpts: -Xms330m -Xmx330m -XX:+AlwaysPreTouch -XX:+UseG1GC
 
 image:
   name: excerpt-worker
